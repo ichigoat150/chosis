@@ -1,13 +1,15 @@
 
-const jeux = [
-    { nom: "Super Mario", console: "NES", image: image: "images/mario.jpg 
-        {nom: "Pokémon", console: "Game Boy", image: "images/pokemon.jpg"
-    {nom: "Sonic", console: "Mega Drive", image: "images/sonic.jpg"
-    {nom: "Tetris", console: "Game Boy", image: "images/tetris.jpg"
-    {nom: "Pac-Man", console: "Arcade", image: "images/pacman.jpg"
-    {nom: "Zelda", console: "SNES", image:  "images/zelda.jpg"
 
+const jeux = [
+    { nom: "Super Mario", console: "NES", image: "./images/mario.jpg" },
+    { nom: "Pokémon", console: "Game Boy", image: "./images/pokemon.jpg" },
+    { nom: "Sonic", console: "Mega Drive", image: "./images/sonic.jpg" },
+    { nom: "Tetris", console: "Game Boy", image: "./images/tetris.jpg" },
+    { nom: "Pac-Man", console: "Arcade", image: "./images/pacman.jpg" },
+    { nom: "Zelda", console: "SNES", image: "./images/zelda.jpg" }
 ];
+
+
 
 let favoris = JSON.parse(localStorage.getItem("chosis_favoris")) || [];
 
@@ -29,7 +31,7 @@ function ouvrirJeu(jeu) {
     search.hidden = true;
     details.hidden = false;
 
-    detailImage.src = jeu.image;
+    detailImage.src = new URL(jeu.image, document.baseURI).href;
     detailImage.alt = "Pochette de " + jeu.nom;
     detailName.textContent = jeu.nom;
     detailConsole.textContent = "Console : " + jeu.console;
@@ -49,7 +51,12 @@ function afficherJeux(liste) {
         carte.className = "game-card";
 
         const image = document.createElement("img");
-        image.src = jeu.image;
+        image.src = new URL(jeu.image, document.baseURI).href;
+
+image.onerror = () => {
+    image.alt = "Image indisponible : " + jeu.nom;
+    console.error("Image introuvable :", image.src);
+};
         image.alt = "Pochette de " + jeu.nom;
         image.addEventListener("click", () => ouvrirJeu(jeu));
 
