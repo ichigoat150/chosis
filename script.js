@@ -1,5 +1,4 @@
 
-
 const jeux = [
     { nom: "Super Mario", console: "NES", image: "./images/mario.jpg" },
     { nom: "Pokémon", console: "Game Boy", image: "./images/pokemon.jpg" },
@@ -22,9 +21,18 @@ const detailConsole = document.getElementById("detail-console");
 const playButton = document.getElementById("play-button");
 const backButton = document.getElementById("back-button");
 
+const zoneJeu = document.getElementById("zone-jeu");
+const jeuFrame = document.getElementById("jeu-frame");
+
 playButton.addEventListener("click", () => {
-    alert("Bientôt disponible ! 🎮");
+    if (jeuOuvert && jeuOuvert.nom === "Super Mario") {
+        zoneJeu.hidden = false;
+        jeuFrame.src = "jeux/test/index.html";
+    } else {
+        alert("Ce jeu n'est pas encore disponible.");
+    }
 });
+
 
 function ouvrirJeu(jeu) {
     games.hidden = true;
