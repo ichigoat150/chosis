@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101020">
+    <title>Chosis Toi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>🎮 Chosis Toi</h1>
+        <p>Ton univers de jeux</p>
+    </header>
+
+    <main>
+        <section class="welcome">
+            <h2>Bienvenue !</h2>
+            <p>Retrouve tes jeux préférés au même endroit.</p>
+        </section>
+
+        <section class="library">
+            <h2>Ma bibliothèque</h2>
+
+            <input
+                type="text"
+                id="search"
+                placeholder="Rechercher un jeu..."
+            >
+
+            <div id="games" class="games"></div>
+
+<section id="game-details" class="game-details" hidden>
+    <button id="back-button">← Retour</button>
+    <img id="detail-image" src="" alt="">
+    <h2 id="detail-name"></h2>
+    <p id="detail-console"></p>
+    <button id="play-button">🎮 Jouer</button>
+</section>
+        
+    </main>
+
+    
+<nav class="bottom-nav">
+    <button class="nav-button active" data-page="home">
+        🏠<span>Accueil</span>
+    </button>
+    <button class="nav-button" data-page="favorites">
+        ❤️<span>Favoris</span>
+    </button>
+    <button class="nav-button" data-page="profile">
+        👤<span>Profil</span>
+    </button>
+</nav>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
