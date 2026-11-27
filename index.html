@@ -17,12 +17,13 @@
     </header>
 
     <main>
-        <section class="welcome">
+        <section id="welcome" class="welcome">
             <h2>Bienvenue</h2>
             <p>Retrouve tes jeux au même endroit.</p>
         </section>
 
-        <section class="library">
+        <!-- Vue liste : accueil, favoris, profil -->
+        <section id="library" class="library">
             <h2 id="section-title">Ma bibliothèque</h2>
 
             <input
@@ -33,24 +34,29 @@
             >
 
             <div id="games" class="games"></div>
+        </section>
 
-            <section id="game-details" class="game-details" hidden>
+        <!-- Vue détail d'un jeu -->
+        <section id="detail-view" class="library" hidden>
+            <div id="game-details" class="game-details">
                 <button id="back-button" type="button">← Retour</button>
-                <img id="detail-image" src="" alt="">
+                <img id="detail-image" alt="">
                 <h2 id="detail-name"></h2>
                 <p id="detail-console"></p>
                 <button id="play-button" type="button">Jouer</button>
+
                 <div id="zone-jeu" hidden>
-    <iframe
-        id="jeu-frame"
-        src=""
-        title="Jeu"
-        width="100%"
-        height="500"
-        style="border: 0;">
-    </iframe>
-</div>
-            </section>
+                    <iframe
+                        id="jeu-frame"
+                        class="jeu-frame"
+                        title="Jeu"
+                        width="100%"
+                        height="500"
+                        sandbox="allow-scripts allow-same-origin"
+                        allow="fullscreen">
+                    </iframe>
+                </div>
+            </div>
         </section>
     </main>
 
