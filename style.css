@@ -71,6 +71,11 @@ body {
     gap: 20px;
 }
 
+.vide {
+    grid-column: 1 / -1;
+    color: #777;
+}
+
 .game-card {
     padding: 10px;
     background: white;
@@ -86,6 +91,14 @@ body {
     cursor: pointer;
 }
 
+.game-card img:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #292929;
+    outline-offset: 2px;
+}
+
 .game-card h3 {
     margin: 12px 0 5px;
     font-size: 16px;
@@ -98,7 +111,8 @@ body {
 }
 
 .game-card button,
-#play-button {
+#play-button,
+#save-profile {
     padding: 9px 12px;
     background: #292929;
     color: white;
@@ -127,12 +141,24 @@ body {
     margin: 20px 0;
 }
 
+.jeu-frame {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    border: 0;
+}
+
 #back-button {
     padding: 9px 12px;
     background: #eee;
     border: 1px solid #ccc;
     border-radius: 3px;
     cursor: pointer;
+}
+
+.profile-card {
+    grid-column: 1 / -1;
+    max-width: 500px;
 }
 
 .profile-card input,
