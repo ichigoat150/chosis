@@ -10,8 +10,8 @@ const jeux = [
     { nom: "Tetris",      console: "Game Boy",   image: "./images/tetris.jpg" },
     { nom: "Pac-Man",     console: "Arcade",     image: "./images/pacman.jpg" },
     { nom: "Zelda",       console: "SNES",       image: "./images/zelda.jpg" },
-    { nom: "Snake",           console: "Navigateur", image: "./images/snake.svg",      url: "jeux/test/snake.html" },
-{ nom: "Mini-Plateforme", console: "Navigateur", image: "./images/plateforme.svg", url: "jeux/test/plateforme.html" }
+    { nom: "Snake",           console: "Navigateur", image: "./images/snake.svg",      url: "jeux/snake.html" },
+{ nom: "Mini-Plateforme", console: "Navigateur", image: "./images/plateforme.svg", url: "jeux/test/plateform.html" }
 ];
 
 const titres = {
