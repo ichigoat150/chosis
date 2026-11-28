@@ -1,25 +1,37 @@
 
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#111318">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Chosis Toi : ta collection, tes jeux.">
     <title>Chosis Toi</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <header class="header">
-        <h1>Chosis Toi</h1>
-        <p>Ta collection, tes jeux.</p>
+        <div class="header-inner">
+            <span class="logo" aria-hidden="true">🎮</span>
+            <div>
+                <h1>Chosis Toi</h1>
+                <p>Ta collection, tes jeux.</p>
+            </div>
+        </div>
     </header>
 
     <main>
         <section id="welcome" class="welcome">
-            <h2>Bienvenue</h2>
-            <p>Retrouve tes jeux au même endroit.</p>
+            <div class="hero">
+                <h2>Bienvenue</h2>
+                <p>Retrouve tes jeux au même endroit.</p>
+            </div>
         </section>
 
         <!-- Vue liste : accueil, favoris, profil -->
@@ -29,8 +41,9 @@
             <input
                 type="search"
                 id="search"
-                placeholder="Rechercher un jeu..."
+                placeholder="Rechercher un jeu ou une console..."
                 aria-label="Rechercher un jeu"
+                autocomplete="off"
             >
 
             <div id="games" class="games"></div>
@@ -59,6 +72,8 @@
             </div>
         </section>
     </main>
+
+    <footer class="footer">Chosis Toi · fait maison</footer>
 
     <nav class="bottom-nav" aria-label="Navigation principale">
         <button class="nav-button active" data-page="home" type="button">
