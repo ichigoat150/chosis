@@ -1,15 +1,17 @@
 
 
 // ---------- Données ----------
-// Ajoute une propriété "url" à un jeu pour le rendre jouable.
+// Une propriété "url" rend un jeu jouable (chemin vers son index.html).
+// Sans "url", le bouton affiche « Bientôt disponible ».
 const jeux = [
-    { nom: "Super Mario", console: "NES",        image: "./images/mario.jpg",   url: "jeux/test/index.html" },
+    { nom: "Super Mario", console: "NES",        image: "./images/mario.jpg" },
     { nom: "Pokémon",     console: "Game Boy",   image: "./images/pokemon.jpg" },
     { nom: "Sonic",       console: "Mega Drive", image: "./images/sonic.jpg" },
     { nom: "Tetris",      console: "Game Boy",   image: "./images/tetris.jpg" },
     { nom: "Pac-Man",     console: "Arcade",     image: "./images/pacman.jpg" },
-    { nom: "Zelda",       console: "SNES",       image: "./images/zelda.jpg" }
-    { nom: "Snake", console: "Mobile", image: "./images/snake.jpg", url: "jeux/snake/index.html" },
+    { nom: "Zelda",       console: "SNES",       image: "./images/zelda.jpg" },
+    { nom: "Snake",           console: "Navigateur", image: "./images/snake.svg",      url: "jeux/test/snake.html" },
+{ nom: "Mini-Plateforme", console: "Navigateur", image: "./images/plateforme.svg", url: "jeux/test/plateforme.html" }
 ];
 
 const titres = {
@@ -59,8 +61,7 @@ playButton.addEventListener("click", () => {
     if (jeuOuvert && jeuOuvert.url) {
         zoneJeu.hidden = false;
         jeuFrame.src = jeuOuvert.url;
-    } else {
-        alert("Ce jeu n'est pas encore disponible.");
+        jeuFrame.focus(); // pour que le clavier marche tout de suite
     }
 });
 
@@ -72,11 +73,15 @@ function ouvrirJeu(jeu) {
     welcome.hidden = true;
     library.hidden = true;
     detailView.hidden = false;
+    window.scrollTo(0, 0);
 
     detailImage.src = new URL(jeu.image, document.baseURI).href;
     detailImage.alt = "Pochette de " + jeu.nom;
     detailName.textContent = jeu.nom;
     detailConsole.textContent = "Console : " + jeu.console;
+
+    playButton.disabled = !jeu.url;
+    playButton.textContent = jeu.url ? "Jouer" : "Bientôt disponible";
 }
 
 backButton.addEventListener("click", () => {
@@ -252,6 +257,14 @@ navButtons.forEach(bouton => {
     });
 });
 
+// ---------- Application installable (PWA) ----------
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(err => {
+            console.error("Service worker non enregistré :", err);
+        });
+    });
+}
+
 // ---------- Démarrage ----------
 afficherPage();
-console.log("Chosis Toi fonctionne !");
