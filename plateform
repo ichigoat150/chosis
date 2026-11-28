@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-plateforme - Chosis Toi</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        html, body { height: 100%; margin: 0; }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #111318;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            user-select: none;
+            touch-action: none;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 640px;
+            max-height: calc(100vh - 20px);
+            aspect-ratio: 16 / 9;
+            background: #8fd3ff;
+            border: 2px solid #333;
+            border-radius: 6px;
+        }
+
+        /* Boutons tactiles : visibles seulement sur écran tactile */
+        .touch { display: none; width: 100%; max-width: 640px; justify-content: space-between; padding: 0 8px; }
+        .touch div { display: flex; gap: 10px; }
+        .touch button {
+            width: 64px;
+            height: 52px;
+            background: #292929;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+        @media (pointer: coarse) {
+            .touch { display: flex; }
+            canvas { max-height: calc(100vh - 80px); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="jeu" width="640" height="360" tabindex="0" aria-label="Jeu de plateforme"></canvas>
+
+    <div class="touch">
+        <div>
+            <button type="button" id="btn-gauche" aria-label="Gauche">←</button>
+            <button type="button" id="btn-droite" aria-label="Droite">→</button>
+        </div>
+        <button type="button" id="btn-saut" aria-label="Sauter">⬆</button>
+    </div>
+
+    <script>
+        const W = 640, H = 360, LARGEUR_NIVEAU = 3300;
+        const canvas = document.getElementById("jeu");
+        const ctx = canvas.getContext("2d");
+
+        // ---------- Niveau ----------
+        const sol = [[0, 600], [700, 1300], [1400, 2000], [2100, 2800], [2900, 3300]]
+            .map(([a, b]) => ({ x: a, y: 300, w: b - a, h: 60 }));
+
+        const flottantes = [
+            { x: 250,  y: 220, w: 100, h: 16 },
+            { x: 480,  y: 170, w: 100, h: 16 },
+            { x: 850,  y: 220, w: 120, h: 16 },
+            { x: 1050, y: 160, w: 100, h: 16 },
+            { x: 1550, y: 220, w: 100, h: 16 },
+            { x: 1720, y: 160, w: 100, h: 16 },
+            { x: 2250, y: 220, w: 120, h: 16 },
+            { x: 2450, y: 170, w: 100, h: 16 }
+        ];
+
+        const plateformes = [...sol, ...flottantes];
+
+        function ligneDePieces(x, y, n, pas = 28) {
+            return Array.from({ length: n }, (_, i) => ({ x: x + i * pas, y, pris: false }));
+        }
+
+        const modelePieces = [
+            ...ligneDePieces(280, 195, 3),
+            ...ligneDePieces(510, 145, 3),
+            ...ligneDePieces(400, 270, 3),
+            ...ligneDePieces(880, 195, 4),
+            ...ligneDePieces(1080, 135, 3),
+            ...ligneDePieces(1200, 270, 3),
+            ...ligneDePieces(1580, 195, 3),
+            ...ligneDePieces(1750, 135, 3),
+            ...ligneDePieces(1900, 270, 3),
+            ...ligneDePieces(2280, 195, 4),
+            ...ligneDePieces(2480, 145, 3),
+            ...ligneDePieces(2700, 270, 3)
+        ];
+
+        const modeleEnnemis = [
+            { x: 800,  min: 760,  max: 1240 },
+            { x: 1500, min: 1450, max: 1950 },
+            { x: 2300, min: 2150, max: 2750 },
+            { x: 3000, min: 2950, max: 3150 }
+        ];
+
+        const drapeau = { x: 3220, y: 200, w: 8, h: 100 };
+
+        // ---------- État ----------
+        let etat = "attente"; // attente | jeu | gagne | perdu
+        let joueur, pieces, ennemis, camX, score;
+        const touches = { gauche: false, droite: false, saut: false };
+        let tamponSaut = 0;
+
+        function reinitialiser() {
+            joueur = { x: 60, y: 200, w: 22, h: 30, vx: 0, vy: 0, auSol: false, dir: 1 };
+            pieces = modelePieces.map(p => ({ ...p }));
+            ennemis = modeleEnnemis.map(e => ({ x: e.x, y: 276, w: 24, h: 24, min: e.min, max: e.max, dir: 1, vivant: true }));
+            camX = 0;
+            score = 0;
+        }
+
+        function demarrer() {
+            if (etat !== "jeu") {
+                reinitialiser();
+                etat = "jeu";
+            }
+        }
+
+        // ---------- Collisions ----------
+        const chevauche = (a, b) =>
+            a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+        function perdre() { etat = "perdu"; }
+
+        function mettreAJour() {
+            if (etat !== "jeu") return;
+            const p = joueur;
+
+            // déplacement horizontal (avec un peu d'inertie)
+            const cible = ((touches.droite ? 1 : 0) - (touches.gauche ? 1 : 0)) * 3.4;
+            p.vx += (cible - p.vx) * 0.25;
+            if (cible !== 0) p.dir = cible > 0 ? 1 : -1;
+
+            // saut
+            if (tamponSaut > 0) {
+                tamponSaut--;
+                if (p.auSol) { p.vy = -12; p.auSol = false; tamponSaut = 0; }
+            }
+            if (!touches.saut && p.vy < -4) p.vy = -4; // saut plus court si on relâche
+
+            // gravité
+            p.vy = Math.min(p.vy + 0.6, 14);
+
+            // axe X
+            p.x += p.vx;
+            if (p.x < 0) p.x = 0;
+            for (const pl of plateformes) {
+                if (chevauche(p, pl)) {
+                    if (p.vx > 0) p.x = pl.x - p.w;
+                    else if (p.vx < 0) p.x = pl.x + pl.w;
+                    p.vx = 0;
+                }
+            }
+
+            // axe Y
+            p.y += p.vy;
+            p.auSol = false;
+            for (const pl of plateformes) {
+                if (chevauche(p, pl)) {
+                    if (p.vy > 0) { p.y = pl.y - p.h; p.auSol = true; }
+                    else if (p.vy < 0) { p.y = pl.y + pl.h; }
+                    p.vy = 0;
+                }
+            }
+
+            // chute dans le vide
+            if (p.y > H + 80) { perdre(); return; }
+
+            // ennemis
+            for (const e of ennemis) {
+                if (!e.vivant) continue;
+                e.x += e.dir * 1;
+                if (e.x < e.min || e.x + e.w > e.max) e.dir *= -1;
+
+                if (chevauche(p, e)) {
+                    const enChute = p.vy > 0 && (p.y + p.h - p.vy) <= e.y + 8;
+                    if (enChute) {
+                        e.vivant = false;
+                        p.vy = -8;
+                        score += 5;
+                    } else {
+                        perdre();
+                        return;
+                    }
+                }
+            }
+
+            // pièces
+            for (const c of pieces) {
+                if (!c.pris && Math.hypot(p.x + p.w / 2 - c.x, p.y + p.h / 2 - c.y) < 18) {
+                    c.pris = true;
+                    score++;
+                }
+            }
+
+            // arrivée
+            if (chevauche(p, drapeau)) etat = "gagne";
+
+            // caméra
+            camX = Math.max(0, Math.min(p.x - 200, LARGEUR_NIVEAU - W));
+        }
+
+        // ---------- Dessin ----------
+        function nuage(x, y) {
+            ctx.fillStyle = "rgba(255,255,255,0.85)";
+            ctx.beginPath();
+            ctx.arc(x, y, 18, 0, Math.PI * 2);
+            ctx.arc(x + 20, y - 8, 22, 0, Math.PI * 2);
+            ctx.arc(x + 44, y, 18, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function message(lignes) {
+            ctx.fillStyle = "rgba(17, 19, 24, 0.7)";
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            lignes.forEach((t, i) => {
+                ctx.font = (i === 0 ? "bold 34px" : "16px") + " Arial";
+                ctx.fillText(t, W / 2, H / 2 - 30 + i * 36);
+            });
+        }
+
+        function dessiner() {
+            ctx.clearRect(0, 0, W, H);
+
+            // ciel
+            const ciel = ctx.createLinearGradient(0, 0, 0, H);
+            ciel.addColorStop(0, "#6ec6ff");
+            ciel.addColorStop(1, "#d6f0ff");
+            ctx.fillStyle = ciel;
+            ctx.fillRect(0, 0, W, H);
+
+            // nuages (défilent plus lentement)
+            for (let i = 0; i < 8; i++) {
+                const x = ((i * 260 - camX * 0.4) % (W + 300) + W + 300) % (W + 300) - 80;
+                nuage(x, 50 + (i % 3) * 40);
+            }
+
+            ctx.save();
+            ctx.translate(-Math.round(camX), 0);
+
+            // plateformes
+            for (const pl of plateformes) {
+                ctx.fillStyle = "#8b5a2b";
+                ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+                ctx.fillStyle = "#4caf50";
+                ctx.fillRect(pl.x, pl.y, pl.w, 8);
+            }
+
+            // pièces
+            for (const c of pieces) {
+                if (c.pris) continue;
+                ctx.fillStyle = "#ffd54a";
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#c79a00";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // drapeau
+            ctx.fillStyle = "#eee";
+            ctx.fillRect(drapeau.x, drapeau.y, drapeau.w, drapeau.h);
+            ctx.fillStyle = "#ff5a5f";
+            ctx.beginPath();
+            ctx.moveTo(drapeau.x + drapeau.w, drapeau.y);
+            ctx.lineTo(drapeau.x + drapeau.w + 36, drapeau.y + 16);
+            ctx.lineTo(drapeau.x + drapeau.w, drapeau.y + 32);
+            ctx.fill();
+
+            // ennemis
+            for (const e of ennemis) {
+                if (!e.vivant) continue;
+                ctx.fillStyle = "#c0392b";
+                ctx.fillRect(e.x, e.y, e.w, e.h);
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(e.x + 4, e.y + 6, 6, 6);
+                ctx.fillRect(e.x + 14, e.y + 6, 6, 6);
+                ctx.fillStyle = "#111";
+                ctx.fillRect(e.x + (e.dir > 0 ? 7 : 4), e.y + 8, 3, 3);
+                ctx.fillRect(e.x + (e.dir > 0 ? 17 : 14), e.y + 8, 3, 3);
+            }
+
+            // joueur (personnage original : un petit blob bleu)
+            const p = joueur;
+            ctx.fillStyle = "#2f6fed";
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(p.x + (p.dir > 0 ? 10 : 3), p.y + 7, 8, 8);
+            ctx.fillStyle = "#111";
+            ctx.fillRect(p.x + (p.dir > 0 ? 14 : 4), p.y + 10, 3, 3);
+            ctx.fillStyle = "#ff9f1c";
+            ctx.fillRect(p.x - 1, p.y + p.h - 5, p.w + 2, 5);
+
+            ctx.restore();
+
+            // interface
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 16px Arial";
+            ctx.textAlign = "left";
+            ctx.fillText("Score : " + score, 12, 24);
+
+            if (etat === "attente") message(["Mini-plateforme", "← → pour bouger, Espace pour sauter", "Espace ou toucher l'écran pour jouer"]);
+            if (etat === "perdu")   message(["Raté !", "Score : " + score, "Espace pour rejouer"]);
+            if (etat === "gagne")   message(["Bravo !", "Score : " + score, "Espace pour rejouer"]);
+        }
+
+        // ---------- Boucle (60 images par seconde, quelle que soit la machine) ----------
+        let dernier = performance.now(), reste = 0;
+        function boucle(t) {
+            reste += Math.min(t - dernier, 100);
+            dernier = t;
+            while (reste >= 1000 / 60) {
+                mettreAJour();
+                reste -= 1000 / 60;
+            }
+            dessiner();
+            requestAnimationFrame(boucle);
+        }
+
+        // ---------- Contrôles ----------
+        const mapGauche = ["ArrowLeft", "q", "a"];
+        const mapDroite = ["ArrowRight", "d"];
+        const mapSaut   = ["ArrowUp", " ", "z", "w"];
+
+        function appuyerSaut() {
+            if (etat !== "jeu") { demarrer(); return; }
+            touches.saut = true;
+            tamponSaut = 6;
+        }
+
+        document.addEventListener("keydown", (e) => {
+            const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+            if (mapGauche.includes(k)) touches.gauche = true;
+            else if (mapDroite.includes(k)) touches.droite = true;
+            else if (mapSaut.includes(k)) { if (!e.repeat) appuyerSaut(); }
+            else if (k === "Enter") demarrer();
+            else return;
+            e.preventDefault(); // évite de faire défiler la page
+        });
+
+        document.addEventListener("keyup", (e) => {
+            const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+            if (mapGauche.includes(k)) touches.gauche = false;
+            if (mapDroite.includes(k)) touches.droite = false;
+            if (mapSaut.includes(k)) touches.saut = false;
+        });
+
+        function lier(id, debut, fin) {
+            const b = document.getElementById(id);
+            b.addEventListener("pointerdown", (e) => { e.preventDefault(); debut(); });
+            ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, fin));
+        }
+        lier("btn-gauche", () => touches.gauche = true, () => touches.gauche = false);
+        lier("btn-droite", () => touches.droite = true, () => touches.droite = false);
+        lier("btn-saut", appuyerSaut, () => touches.saut = false);
+
+        canvas.addEventListener("pointerdown", () => { canvas.focus(); if (etat !== "jeu") demarrer(); });
+
+        // ---------- Démarrage ----------
+        reinitialiser();
+        requestAnimationFrame(boucle);
+        window.focus();
+    </script>
+</body>
+</html>
