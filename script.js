@@ -9,6 +9,7 @@ const jeux = [
     { nom: "Tetris",      console: "Game Boy",   image: "./images/tetris.jpg" },
     { nom: "Pac-Man",     console: "Arcade",     image: "./images/pacman.jpg" },
     { nom: "Zelda",       console: "SNES",       image: "./images/zelda.jpg" }
+    { nom: "Snake", console: "Mobile", image: "./images/snake.jpg", url: "jeux/snake/index.html" },
 ];
 
 const titres = {
